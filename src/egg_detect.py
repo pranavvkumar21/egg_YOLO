@@ -19,9 +19,9 @@ while(1):
     r = cv.getTrackbarPos('R','image')
     g = cv.getTrackbarPos('G','image')
     b = cv.getTrackbarPos('B','image')
-    _, frame = cap.read()
+    _,frame = cap.read()
     # Convert BGR to HSV
-    frame = cv.blur(frame,(20,20))
+    #frame = cv.blur(frame,(10,10))
     #kernel = np.ones((20,20),np.float32)/400
     #frame = cv.filter2D(frame,-1,kernel)
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
@@ -29,8 +29,8 @@ while(1):
     hc = cv.cvtColor(color, cv.COLOR_BGR2HSV)
     # define range of blue color in HSV
     h,s,v = hc[0,0,:]
-    lower_limit = np.array([h-100,s-100,v-50])
-    upper_limit = np.array([h+100,s+100,v+50])
+    lower_limit = np.array([h-50,s-100,v-30])
+    upper_limit = np.array([h+50,s+100,v+30])
     # Threshold the HSV image to get only blue colors
 
     print(h,s,v)

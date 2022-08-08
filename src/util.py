@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
+
 import cv2
 import imutils
 import PIL
@@ -10,10 +11,10 @@ import time
 import tensorflow as tf
 import numpy as np
 import keras
-
+from keras.models import model_from_json
 IMAGEFOLDER_PATH = "/home/mobsycho100/Desktop/Scara_Poultry/egg_dataset/"
-RESIZEFOLDER_PATH = "/home/mobsycho100/Desktop/Scara_Poultry/egg_dataset_resized/"
-LABEL_PATH = "/home/mobsycho100/Desktop/Scara_Poultry/test/"
+RESIZEFOLDER_PATH = "/home/mobsycho100/Desktop/Scara_Poultry/dataset/"
+LABEL_PATH = "/home/mobsycho100/Desktop/Scara_Poultry/labels/"
 SIZE = (400,400,3)
 BATCH_SIZE = 2
 SPLIT_SIZE = 13
@@ -41,8 +42,6 @@ def converttosize(IMAGEFOLDER_PATH,RESIZEFOLDER_PATH,SIZE):
     for i in filelist:
         img = cv2.imread(IMAGEFOLDER_PATH+i)
         if img.shape[0]>img.shape[1]:
-
-
             perc_width = SIZE[1]/img.shape[1]
             resize_height = int(perc_width*img.shape[0])
             dim = (SIZE[1],resize_height)
@@ -69,7 +68,7 @@ def nms(boxes,scores ,iou_threshold, max_boxes):
     scores = K.gather(scores,nms_indices)
     boxes = K.gather(boxes,nms_indices)
 
-class Yolo_generator(keras.utils.Sequence) :
+class Yolo_generator(tf.keras.utils.Sequence) :
 
     def getlist(self,filepath):
         pwd = os.getcwd()
@@ -82,11 +81,14 @@ class Yolo_generator(keras.utils.Sequence) :
         self.image_dir = image_dir
         self.label_dir = label_dir
         self.image_filenames = self.getlist(self.image_dir)
-        self.labels = self.getlist(self.label_dir)
+        self.labels = [(self.image_filenames[i].split(".")[0] +".txt") for i in range(len(self.image_filenames))]
+        print("labels read")
         self.batch_size = batch_size
         self.split_size = split_size
         self.image_size = image_size
         self.box_size = self.image_size // self.split_size
+        #for key,val in enumerate(self.image_filenames):
+        #    print(val + '     ' + self.labels[key])
 
 
     def __len__(self) :
@@ -131,8 +133,9 @@ class Yolo_generator(keras.utils.Sequence) :
         batch_x = self.image_filenames[idx * self.batch_size : (idx+1) * self.batch_size]
         batch_y = self.labels[idx * self.batch_size : (idx+1) * self.batch_size]
         X,Y = self.get_data(batch_x,batch_y)
+        #print(Y.shape)
+        #print(X.shape)
         return X,Y
-
 
 def blank_labels(X_path,Y_path):
     os.chdir(X_path)
@@ -142,3 +145,30 @@ def blank_labels(X_path,Y_path):
     c= [b[i][0] for i in range(0,len(b))]
     for i in c:
         os.system("touch "+i+".txt")
+
+def rename_img(IMAGEFOLDER_PATH):
+    pwd = os.getcwd()
+    os.chdir(IMAGEFOLDER_PATH)
+    filelist = os.listdir()
+    for i in range(0,len(filelist)):
+        os.rename(filelist[i],str(i)+".jpg")
+    os.chdir(pwd)
+
+    def load_model():
+        try:
+            #print(os.getcwd())
+            json_file = open("/home/mobsycho100/Desktop/Scara_Poultry/model.json", 'r')
+            #print("loaded model")
+            loaded_model_json = json_file.read()
+            #print(loaded_model_json)
+            json_file.close()
+            model = model_from_json(loaded_model_json)
+            #print("blah")
+            # load weights into new model
+            model.load_weights("model.h5")
+            return model
+        except:
+            print("error loading files \n make sure files exist")
+
+#rename_img(IMAGEFOLDER_PATH)
+#converttosize(IMAGEFOLDER_PATH,RESIZEFOLDER_PATH,SIZE)
